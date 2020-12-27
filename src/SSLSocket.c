@@ -546,6 +546,9 @@ exit:
 int SSLSocket_createContext(networkHandles* net, MQTTClient_SSLOptions* opts)
 {
 	int rc = 1;
+	BIO *bio = NULL;
+	X509 *certX509 = NULL;
+	EVP_PKEY *pkey = NULL;
 
 	FUNC_ENTRY;
 	if (net->ctx == NULL)
@@ -625,6 +628,34 @@ int SSLSocket_createContext(networkHandles* net, MQTTClient_SSLOptions* opts)
 				SSLSocket_error("SSL_CTX_use_PrivateKey_file", NULL, net->socket, rc, NULL, NULL);
 			goto free_ctx;
 		}
+	} else if (opts->clientCertString && opts->struct_version >= 5)
+	{
+		bio = BIO_new_mem_buf(opts->clientCertString, -1);
+		certX509 = PEM_read_bio_X509(bio, NULL, NULL, NULL);
+		if ((rc = SSL_CTX_use_certificate(net->ctx, certX509)) != 1)
+		{
+			if (opts->struct_version >= 3)
+				SSLSocket_error("SSL_CTX_use_certificate", NULL, net->socket, rc, opts->ssl_error_cb, opts->ssl_error_context);
+			else
+				SSLSocket_error("SSL_CTX_use_certificate", NULL, net->socket, rc, NULL, NULL);
+			goto free_ctx; /*If we can't load the certificate then loading the privatekey won't work either as it needs a matching cert already loaded */
+		}
+		BIO_free_all(bio);
+		bio = NULL;
+
+		/* the privateKey can be included in the clientCert */
+		bio = BIO_new_mem_buf(opts->privateKeyString ? opts->privateKeyString : opts->clientCertString, -1);
+		pkey = PEM_read_bio_PrivateKey(bio, NULL, pem_passwd_cb, (void*)opts->privateKeyPassword);
+		if ((rc = SSL_CTX_use_PrivateKey(net->ctx, pkey)) != 1)
+		{
+			if (opts->struct_version >= 3)
+				SSLSocket_error("SSL_CTX_use_PrivateKey", NULL, net->socket, rc, opts->ssl_error_cb, opts->ssl_error_context);
+			else
+				SSLSocket_error("SSL_CTX_use_PrivateKey", NULL, net->socket, rc, NULL, NULL);
+			goto free_ctx;
+		}
+		BIO_free_all(bio);
+		bio = NULL;
 	}
 
 	if (opts->trustStore || opts->CApath)
@@ -696,6 +727,12 @@ free_ctx:
 	net->ctx = NULL;
 
 exit:
+	if (certX509)
+		X509_free(certX509);
+	if (pkey)
+		EVP_PKEY_free(pkey);
+	if (bio)
+		BIO_free_all(bio);
 	FUNC_EXIT_RC(rc);
 	return rc;
 }

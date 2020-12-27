@@ -1149,9 +1149,20 @@ typedef struct
 	 * Exists only if struct_version >= 5
 	 */
 	unsigned int protos_len;
+
+    /**
+   * The client certificate provided directly in-memory (not as a file)
+   * Exists only if struct_version >= 6
+   */
+  const char *clientCertString;
+  /**
+   * The private key provided directly in-memory (not as a file)
+   * Exists only if struct_version >= 6
+   */
+  const char *privateKeyString;
 } MQTTAsync_SSLOptions;
 
-#define MQTTAsync_SSLOptions_initializer { {'M', 'Q', 'T', 'S'}, 5, NULL, NULL, NULL, NULL, NULL, 1, MQTT_SSL_VERSION_DEFAULT, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, 0 }
+#define MQTTAsync_SSLOptions_initializer { {'M', 'Q', 'T', 'S'}, 6, NULL, NULL, NULL, NULL, NULL, 1, MQTT_SSL_VERSION_DEFAULT, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, 0, NULL, NULL}
 
 /** Utility structure where name/value pairs are needed */
 typedef struct
