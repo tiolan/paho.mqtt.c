@@ -84,6 +84,7 @@ typedef struct
 #if defined(OPENSSL)
 	SSL* ssl;
 	SSL_CTX* ctx;
+	int ctxIsFromUser;
 	char *https_proxy;
 	char *https_proxy_auth;
 #endif

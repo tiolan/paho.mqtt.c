@@ -580,7 +580,7 @@ int MQTTAsync_connect(MQTTAsync handle, const MQTTAsync_connectOptions* options)
 	}
 	if (options->struct_version != 0 && options->ssl) /* check validity of SSL options structure */
 	{
-		if (strncmp(options->ssl->struct_id, "MQTS", 4) != 0 || options->ssl->struct_version < 0 || options->ssl->struct_version > 5)
+		if (strncmp(options->ssl->struct_id, "MQTS", 4) != 0 || options->ssl->struct_version < 0 || options->ssl->struct_version > 6)
 		{
 			rc = MQTTASYNC_BAD_STRUCTURE;
 			goto exit;
@@ -786,6 +786,10 @@ int MQTTAsync_connect(MQTTAsync handle, const MQTTAsync_connectOptions* options)
 		{
 			m->c->sslopts->protos = options->ssl->protos;
 			m->c->sslopts->protos_len = options->ssl->protos_len;
+		}
+		if (m->c->sslopts->struct_version >= 6)
+		{
+			m->c->sslopts->sslContext = options->ssl->sslContext;
 		}
 	}
 #else

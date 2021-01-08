@@ -548,6 +548,14 @@ int SSLSocket_createContext(networkHandles* net, MQTTClient_SSLOptions* opts)
 	int rc = 1;
 
 	FUNC_ENTRY;
+
+	if(opts->sslContext)
+	{
+		/* User provided own ssl context */
+		net->ctx = (SSL_CTX*)opts->sslContext;
+		net->ctxIsFromUser = 1;
+	}
+
 	if (net->ctx == NULL)
 	{
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
@@ -692,8 +700,7 @@ int SSLSocket_createContext(networkHandles* net, MQTTClient_SSLOptions* opts)
 
 	goto exit;
 free_ctx:
-	SSL_CTX_free(net->ctx);
-	net->ctx = NULL;
+	SSLSocket_destroyContext(net);
 
 exit:
 	FUNC_EXIT_RC(rc);
@@ -925,7 +932,7 @@ exit:
 void SSLSocket_destroyContext(networkHandles* net)
 {
 	FUNC_ENTRY;
-	if (net->ctx)
+	if (net->ctx && net->ctxIsFromUser != 1)
 		SSL_CTX_free(net->ctx);
 	net->ctx = NULL;
 	FUNC_EXIT;

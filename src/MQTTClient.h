@@ -661,12 +661,13 @@ typedef struct
 	/** The eyecatcher for this structure.  Must be MQTS */
 	char struct_id[4];
 
-	/** The version number of this structure. Must be 0, 1, 2, 3, 4 or 5.
+	/** The version number of this structure. Must be 0, 1, 2, 3, 4, or 6.
 	 * 0 means no sslVersion
 	 * 1 means no verify, CApath
 	 * 2 means no ssl_error_context, ssl_error_cb
 	 * 3 means no ssl_psk_cb, ssl_psk_context, disableDefaultTrustStore
 	 * 4 means no protos, protos_len
+   * 5 means no sslContext
 	 */
 	int struct_version;
 
@@ -765,9 +766,19 @@ typedef struct
 	 * Exists only if struct_version >= 5
 	 */
 	unsigned int protos_len;
+
+	/**
+	 * A user-defined ssl context (SSL_CTX as created by SSL_CTX_new())
+   * If set != NULL, this context will be used in order to establish an SSL connection. Options for this context have to be set by
+   * the user before connecting to the broker. In case certificate paths or other options are set via MQTTClient_SSLOptions, the
+   * users setting would be overridden.
+   * The user is responsible for freeing the context.
+	 * Exists only if struct_version >= 6
+	 */
+	void *sslContext;
 } MQTTClient_SSLOptions;
 
-#define MQTTClient_SSLOptions_initializer { {'M', 'Q', 'T', 'S'}, 5, NULL, NULL, NULL, NULL, NULL, 1, MQTT_SSL_VERSION_DEFAULT, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, 0 }
+#define MQTTClient_SSLOptions_initializer { {'M', 'Q', 'T', 'S'}, 6, NULL, NULL, NULL, NULL, NULL, 1, MQTT_SSL_VERSION_DEFAULT, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL, 0, NULL }
 
 /**
   * MQTTClient_libraryInfo is used to store details relating to the currently used
